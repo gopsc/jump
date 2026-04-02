@@ -562,12 +562,6 @@ def start_websocket_server():
             server.serve_forever()
     except Exception as e:
         logger.error(f"WebSocket 服务器启动失败: {e}")
-
-# ==================== 根路径 ====================
-@app.route('/')
-def index():
-    return jsonify({'status': 'ok', 'message': 'Bastion Server Running', 'websocket': 'ws://localhost:5002'})
-
 # ==================== 启动应用 ====================
 if __name__ == '__main__':
     with app.app_context():

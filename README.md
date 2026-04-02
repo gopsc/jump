@@ -22,23 +22,25 @@
 ## 系统架构
 
 ```
-┌─────────────┐     HTTP API      ┌─────────────┐
-│   Web 前端   │ ◄──────────────► │  Flask App  │
-│             │                    │  (Port 5001) │
-│             │                    └──────┬──────┘
-│             │                           │
-│             │     WebSocket             │
-│             │ ◄────────────────────────► │
-└─────────────┘                    ┌──────▼──────┐
-                                   │  WebSocket  │
-                                   │  (Port 5002) │
-                                   └──────┬──────┘
-                                          │ SSH
-                                    ┌─────▼─────┐
-                                    │  Target   │
-                                    │  Servers  │
-                                    └───────────┘
+┌─────────────────┐     HTTP API      ┌─────────────┐
+│   Web 前端       │ ◄──────────────► │  Flask App  │
+│  (smn 项目)      │                    │  (Port 5001) │
+│                 │                    └──────┬──────┘
+│                 │                           │
+│                 │     WebSocket             │
+│                 │ ◄────────────────────────► │
+└─────────────────┘                    ┌──────▼──────┐
+                                       │  WebSocket  │
+                                       │  (Port 5002) │
+                                       └──────┬──────┘
+                                              │ SSH
+                                        ┌─────▼─────┐
+                                        │  Target   │
+                                        │  Servers  │
+                                        └───────────┘
 ```
+
+> 📌 **前端说明**：本项目的 Web 终端界面由 [SMN 项目](https://github.com/gopsc/smn) 托管提供。SMN 是一个功能完善的 Web 文件管理工具，支持用户认证、文件操作和代理功能，与本跳板机后端配合使用可提供完整的堡垒机解决方案。
 
 ## 快速开始
 
@@ -46,17 +48,30 @@
 
 - Python 3.8+
 - pip
+- Git（用于克隆前端项目）
 
-### 安装依赖
+### 一键安装环境
+
+使用提供的 `_set.sh` 脚本自动安装所有依赖：
 
 ```bash
-pip install flask flask-cors flask-sqlalchemy paramiko websockets
+chmod +x _set.sh
+./_set.sh
 ```
+
+该脚本会自动完成：
+- 检查 Python 环境
+- 安装 Python 依赖包（flask, flask-cors, flask-sqlalchemy, paramiko, websockets）
+- 创建必要的目录结构
+- 初始化数据库
 
 ### 运行服务
 
+使用 `_run.sh` 脚本启动服务：
+
 ```bash
-python jump_server.py
+chmod +x _run.sh
+./_run.sh
 ```
 
 服务启动后会显示：
@@ -69,15 +84,27 @@ WebSocket: ws://localhost:5002
 ============================================================
 ```
 
-### 配置说明
+### 手动安装（备选）
 
-#### 环境变量
+如果自动脚本失败，可以手动执行：
+
+```bash
+# 安装依赖
+pip install flask flask-cors flask-sqlalchemy paramiko websockets
+
+# 启动服务
+python jump_server.py
+```
+
+## 配置说明
+
+### 环境变量
 
 | 变量名 | 说明 | 默认值 |
 |--------|------|--------|
 | `SECRET_KEY` | Flask 会话密钥 | `bastion-secret-key-change-in-production` |
 
-#### 端口配置
+### 端口配置
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
@@ -314,9 +341,64 @@ ws://localhost:5002
 ```
 .
 ├── jump_server.py          # 主程序文件
+├── _set.sh                 # 环境安装脚本
+├── _run.sh                 # 服务启动脚本
 ├── bastion.db              # SQLite 数据库（运行时生成）
 └── README.md               # 项目文档
 ```
+
+## 脚本说明
+
+### `_set.sh` - 环境安装脚本
+
+自动完成以下任务：
+- 检查 Python 3.8+ 环境
+- 升级 pip 到最新版本
+- 安装所有必需的 Python 包
+- 验证安装是否成功
+
+### `_run.sh` - 服务启动脚本
+
+- 检查依赖是否已安装
+- 启动 HTTP API 服务（端口 5001）
+- 启动 WebSocket 服务（端口 5002）
+- 显示服务状态信息
+
+## 与 SMN 前端集成
+
+本跳板机后端需要配合 [SMN 项目](https://github.com/gopsc/smn) 的前端界面使用。SMN 提供了完整的 Web 终端界面和用户管理功能。
+
+### 集成步骤
+
+1. **克隆 SMN 项目**
+   ```bash
+   git clone https://github.com/gopsc/smn.git
+   cd smn
+   ```
+
+2. **配置 SMN 代理**
+   
+   编辑 SMN 项目的 `config.ini` 文件，添加跳板机 API 的代理配置：
+   ```ini
+   [proxy]
+   enabled = true
+   allowed_targets = http://localhost:5001,ws://localhost:5002
+   ```
+
+3. **启动 SMN 前端**
+   ```bash
+   ./_run.sh  # SMN 项目的前端启动脚本
+   ```
+
+4. **启动跳板机后端**
+   ```bash
+   cd /path/to/jump-server
+   ./_run.sh
+   ```
+
+5. **访问 Web 终端**
+   
+   打开浏览器访问 SMN 前端地址（默认 `http://localhost:5000`），通过代理功能连接到跳板机后端。
 
 ## 开发计划
 
@@ -326,7 +408,7 @@ ws://localhost:5002
 - [ ] 添加会话录像功能
 - [ ] 支持 RDP 协议
 - [ ] 集成 LDAP/OAuth 认证
-- [ ] 提供 Web 管理界面
+- [ ] 完善 Web 管理界面
 - [ ] 支持多租户隔离
 
 ## 常见问题
@@ -345,6 +427,16 @@ ws://localhost:5002
 
 SQLite 并发写入能力有限，生产环境建议迁移到 PostgreSQL 或 MySQL。
 
+### 4. `_set.sh` 脚本执行失败？
+
+- 确认 Python 版本 >= 3.8
+- 检查是否有管理员权限（某些系统需要 sudo）
+- 手动执行 `pip install flask flask-cors flask-sqlalchemy paramiko websockets`
+
+### 5. 如何修改默认端口？
+
+编辑 `jump_server.py` 文件，找到 `app.run(host='127.0.0.1', port=5001, ...)` 和 `serve(handle_websocket, "0.0.0.0", 5002)` 修改端口号。
+
 ## 贡献指南
 
 欢迎提交 Issue 和 Pull Request。
@@ -352,6 +444,10 @@ SQLite 并发写入能力有限，生产环境建议迁移到 PostgreSQL 或 MyS
 ## 许可证
 
 MIT License
+
+## 相关项目
+
+- [SMN](https://github.com/gopsc/smn) - 前端 Web 管理界面和代理服务
 
 ## 联系方式
 
